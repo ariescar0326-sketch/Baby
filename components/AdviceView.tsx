@@ -16,32 +16,26 @@ interface AdviceViewProps {
 }
 
 const SourceLink: React.FC<{ 
-  url?: string;
   title?: string;
   defaultQuery: string; 
   type: 'mohw' | 'journal' | 'social'; 
   label: string 
-}> = ({ url, title, defaultQuery, type, label }) => {
+}> = ({ title, defaultQuery, type, label }) => {
   
-  // Strategy: If AI provided a direct URL, use it.
-  // Otherwise, use title for search.
+  // FIXED: Always generate a search URL. Never use AI generated deep links (removed).
+  const searchQuery = title || defaultQuery;
   let finalUrl = '';
-  
-  if (url && url.length > 5) {
-      finalUrl = url;
-  } else {
-    const searchQuery = title || defaultQuery;
-    switch (type) {
-        case 'mohw':
-        finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:mohw.gov.tw OR site:hpa.gov.tw')}`;
-        break;
-        case 'journal':
-        finalUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(searchQuery)}`;
-        break;
-        case 'social':
-        finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:ptt.cc OR site:dcard.tw OR site:facebook.com')}`;
-        break;
-    }
+
+  switch (type) {
+      case 'mohw':
+      finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:mohw.gov.tw OR site:hpa.gov.tw')}`;
+      break;
+      case 'journal':
+      finalUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(searchQuery)}`;
+      break;
+      case 'social':
+      finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:ptt.cc OR site:dcard.tw OR site:facebook.com')}`;
+      break;
   }
 
   return (
@@ -83,7 +77,7 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-6 bg-[#E3E8EB] min-h-screen">
       
-      {/* Title Section - Removed Tag Annotation */}
+      {/* Title Section */}
       <div className="mb-6 mt-2 text-center">
         <h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-tight">
           {topic.title}
@@ -100,32 +94,29 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
       ) : result ? (
         <div className="space-y-4 pb-20 max-w-lg mx-auto">
           
-          {/* 1. Social Buzz (Always shown) */}
+          {/* 1. Social Buzz (Quotes Only) */}
           <div className="bg-[#F3EFDD] rounded-2xl border border-[#E3D5C9] shadow-sm p-6 relative overflow-hidden">
-             {/* Decorative element */}
              <div className="absolute top-0 right-0 w-16 h-16 bg-[#E3D5C9] opacity-20 rounded-bl-full"></div>
 
             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-base mb-4">
               🔥 網友熱議
             </h3>
             
-            {/* Quotes Section */}
-            {result.socialQuotes && result.socialQuotes.length > 0 && (
-               <div className="space-y-3 mb-5">
+            {/* Quotes Only - No Summary Text */}
+            {result.socialQuotes && result.socialQuotes.length > 0 ? (
+               <div className="space-y-3 mb-2">
                  {result.socialQuotes.map((quote, idx) => (
                    <div key={idx} className="bg-white/60 text-slate-700 text-sm px-4 py-3 rounded-xl border-l-4 border-[#E3D5C9]">
                      {quote}
                    </div>
                  ))}
                </div>
+            ) : (
+                <div className="text-slate-500 text-sm">暫無相關討論</div>
             )}
 
-            <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line mb-2 font-normal">
-              {result.socialBuzz}
-            </div>
             <div className="text-right">
               <SourceLink 
-                url={result.socialUrl}
                 defaultQuery={topic.title} 
                 type="social" 
                 label="討論" 
@@ -144,7 +135,6 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
               </div>
               <div className="text-right">
                 <SourceLink 
-                  url={result.mohwUrl}
                   title={result.mohwTitle}
                   defaultQuery={topic.title} 
                   type="mohw" 
@@ -165,7 +155,6 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
               </div>
               <div className="text-right">
                 <SourceLink 
-                  url={result.journalUrl}
                   title={result.journalTitle}
                   defaultQuery={topic.title} 
                   type="journal" 

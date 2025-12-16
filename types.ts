@@ -5,12 +5,13 @@ export enum StageId {
   PREG_LATE = 'pregnancy_late',
   NEWBORN_BIRTH = 'newborn_birth', // 0-1m
   NEWBORN_ROUTINE = 'newborn_routine', // 1-4m
-  INFANT = 'infant',
+  INFANT_FLIP = 'infant_flip', // 4-6m
+  INFANT_CRAWL = 'infant_crawl', // 7-12m
   TODDLER = 'toddler'
 }
 
-// Merged: Safety->Health, Appearance->Development. Renamed: Utility->Merchandise(商品)
-export type TopicTag = '健康' | '心理' | '營養' | '發展' | '價值觀' | '商品';
+// Added '衛教' (Health Education).
+export type TopicTag = '檢查' | '健康' | '衛教' | '心理' | '營養' | '發展' | '價值觀' | '商品';
 
 export interface Topic {
   id: string;
@@ -30,15 +31,14 @@ export interface Stage {
 }
 
 export interface AdviceResult {
-  socialBuzz: string;
-  socialQuotes: string[]; // Direct quotes from netizens
-  socialUrl?: string;     // Link to a thread
+  // Removed socialBuzz (summary) as requested
+  socialQuotes: string[]; 
   mohwFacts: string;     
   mohwTitle?: string;
-  mohwUrl?: string;       // Direct link
   journalResearch: string; 
   journalTitle?: string;
-  journalUrl?: string;    // Direct link
+  // Removed direct *Url fields because they are unreliable/hallucinated.
+  // We will construct robust search URLs client-side.
 }
 
 export interface HistoryItem {
