@@ -9,7 +9,8 @@ export enum StageId {
   TODDLER = 'toddler'
 }
 
-export type TopicTag = '健康' | '心理' | '安全' | '營養' | '發展' | '外觀' | '價值觀';
+// Merged: Safety->Health, Appearance->Development. Renamed: Utility->Merchandise(商品)
+export type TopicTag = '健康' | '心理' | '營養' | '發展' | '價值觀' | '商品';
 
 export interface Topic {
   id: string;
@@ -31,10 +32,13 @@ export interface Stage {
 export interface AdviceResult {
   socialBuzz: string;
   socialQuotes: string[]; // Direct quotes from netizens
+  socialUrl?: string;     // Link to a thread
   mohwFacts: string;     
-  mohwTitle?: string;     // Specific Title for search fallback
+  mohwTitle?: string;
+  mohwUrl?: string;       // Direct link
   journalResearch: string; 
-  journalTitle?: string;  // Specific Paper Title
+  journalTitle?: string;
+  journalUrl?: string;    // Direct link
 }
 
 export interface HistoryItem {

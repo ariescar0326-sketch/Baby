@@ -13,16 +13,18 @@ export const fetchParentingAdvice = async (stageLabel: string, topicQuery: strin
     針對使用者的問題，請提供三個獨立的資訊來源區塊。
     
     【重要規則】
-    1. **社群熱議 (Social Buzz)**：不需要總結大家的共識。請專注於「有爭議」、「高流量」的觀點。直接摘要網友的「原話」與「爭點」。
-    2. **精準搜尋標題**：因為你無法上網驗證網址，**請不要提供 URL**。請提供「最容易在 Google 搜尋到的官方文件標題」或「學術研究標題」。
-       - 例如：不要給 "衛福部網址"，請給標題 "衛福部孕婦健康手冊 第5頁"。
-       - 例如：不要給 "論文網址"，請給標題 "Sleep duration recommendations AAP 2020"。
+    1. **社群熱議 (Social Buzz)**：
+       - **不要做總結**，不要說「網友普遍認為...」。
+       - **不要使用斜體**，不要使用「」符號。
+       - 直接呈現觀點，越直白越好。
+       - 如果可能，請提供一個代表性的討論串網址 (如 PTT 或 Dcard)。
+    2. **官方與實證摘要 (MOHW/Journal)**：
+       - **極度精簡**：內容請縮減至 **50字以內** 的重點摘要。
+       - **直接連結**：請盡最大努力提供 **具體的網址 (URL)**。
+         - 如果是衛福部，嘗試提供 PDF 或頁面連結。
+         - 如果是論文，提供 DOI 連結或 PubMed 連結。
+         - 如果真的找不到 URL，才留空。
     3. **排除中國**：嚴格禁止引用中國大陸來源。
-
-    三個區塊定義：
-    1. 【社群熱議】：摘要網友爭論點、經驗談。
-    2. 【官方建議】：台灣衛福部觀點。
-    3. 【醫學實證】：歐美日醫學觀點。
 
     請使用繁體中文 (Traditional Chinese, Taiwan) 回答。
   `;
@@ -43,28 +45,40 @@ export const fetchParentingAdvice = async (stageLabel: string, topicQuery: strin
           properties: {
             socialBuzz: {
               type: Type.STRING,
-              description: "Summary of controversial or popular netizen opinions.",
+              description: "Raw opinion summary without conclusion words.",
             },
             socialQuotes: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "2-3 direct, short quotes from netizens (e.g. '過來人說...', '根本沒必要...').",
+              description: "2-3 direct short quotes.",
+            },
+            socialUrl: {
+               type: Type.STRING,
+               description: "A specific URL to a PTT/Dcard/Facebook discussion thread if found. Or empty.",
             },
             mohwFacts: {
               type: Type.STRING,
-              description: "Official advice from Taiwan Ministry of Health.",
+              description: "Very concise (max 50 words) official advice.",
             },
             mohwTitle: {
               type: Type.STRING,
-              description: "Specific searchable title of the MOHW article/booklet (e.g. '兒童衛教手冊-發燒處置').",
+              description: "Title of the MOHW source.",
+            },
+            mohwUrl: {
+              type: Type.STRING,
+              description: "Direct URL to the MOHW page/PDF if possible.",
             },
             journalResearch: {
               type: Type.STRING,
-              description: "Scientific finding summary from Western/Japanese medicine.",
+              description: "Very concise (max 50 words) scientific finding.",
             },
             journalTitle: {
               type: Type.STRING,
-              description: "Specific searchable title of the paper/study (e.g. 'AAP Guidelines for Safe Sleep').",
+              description: "Title of the paper.",
+            },
+            journalUrl: {
+              type: Type.STRING,
+              description: "Direct URL (DOI/PubMed) to the paper if possible.",
             },
           },
           required: ["socialBuzz", "socialQuotes", "mohwFacts", "journalResearch", "mohwTitle", "journalTitle"],
