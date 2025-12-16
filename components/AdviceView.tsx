@@ -15,42 +15,6 @@ interface AdviceViewProps {
   onBack: () => void;
 }
 
-const SourceLink: React.FC<{ 
-  title?: string;
-  defaultQuery: string; 
-  type: 'mohw' | 'journal' | 'social'; 
-  label: string 
-}> = ({ title, defaultQuery, type, label }) => {
-  
-  // FIXED: Always generate a search URL. Never use AI generated deep links (removed).
-  const searchQuery = title || defaultQuery;
-  let finalUrl = '';
-
-  switch (type) {
-      case 'mohw':
-      finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:mohw.gov.tw OR site:hpa.gov.tw')}`;
-      break;
-      case 'journal':
-      finalUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(searchQuery)}`;
-      break;
-      case 'social':
-      finalUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' site:ptt.cc OR site:dcard.tw OR site:facebook.com')}`;
-      break;
-  }
-
-  return (
-    <a 
-      href={finalUrl} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 mt-3 text-[12px] font-bold text-[#7ca9b0] bg-[#E3E8EB] border border-[#A3D5DC] px-4 py-1.5 rounded-full hover:bg-[#A3D5DC] hover:text-white transition-colors"
-    >
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-      {label}
-    </a>
-  );
-};
-
 const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<AdviceResult | null>(null);
@@ -88,25 +52,26 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
         <div className="flex flex-col items-center justify-center py-20 space-y-4">
           <Spinner />
           <p className="text-slate-500 animate-pulse text-sm">
-            {isValueTopic ? '正在蒐集網路意見...' : '正在檢索醫學實證與衛福部資料...'}
+            {isValueTopic ? '正在蒐集網路意見...' : '正在整理相關資料...'}
           </p>
         </div>
       ) : result ? (
         <div className="space-y-4 pb-20 max-w-lg mx-auto">
           
-          {/* 1. Social Buzz (Quotes Only) */}
-          <div className="bg-[#F3EFDD] rounded-2xl border border-[#E3D5C9] shadow-sm p-6 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-16 h-16 bg-[#E3D5C9] opacity-20 rounded-bl-full"></div>
+          {/* 1. Social Buzz (Quotes Only) - Changed to White background for consistency */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden">
+             {/* Decorative blob kept but lighter */}
+             <div className="absolute top-0 right-0 w-16 h-16 bg-[#E3D5C9] opacity-10 rounded-bl-full"></div>
 
             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-base mb-4">
               🔥 網友熱議
             </h3>
             
-            {/* Quotes Only - No Summary Text */}
+            {/* Quotes Only */}
             {result.socialQuotes && result.socialQuotes.length > 0 ? (
-               <div className="space-y-3 mb-2">
+               <div className="space-y-3">
                  {result.socialQuotes.map((quote, idx) => (
-                   <div key={idx} className="bg-white/60 text-slate-700 text-sm px-4 py-3 rounded-xl border-l-4 border-[#E3D5C9]">
+                   <div key={idx} className="bg-slate-50 text-slate-700 text-sm px-4 py-3 rounded-xl border-l-4 border-[#E3D5C9]">
                      {quote}
                    </div>
                  ))}
@@ -114,32 +79,16 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
             ) : (
                 <div className="text-slate-500 text-sm">暫無相關討論</div>
             )}
-
-            <div className="text-right">
-              <SourceLink 
-                defaultQuery={topic.title} 
-                type="social" 
-                label="討論" 
-              />
-            </div>
           </div>
 
           {/* 2. MOHW (Hidden for Values) */}
           {!isValueTopic && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <h3 className="font-bold text-[#7ca9b0] flex items-center gap-2 text-base mb-4">
-                🏥 衛福部建議
+                🏥 衛福部/醫生建議
               </h3>
               <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">
                 {result.mohwFacts}
-              </div>
-              <div className="text-right">
-                <SourceLink 
-                  title={result.mohwTitle}
-                  defaultQuery={topic.title} 
-                  type="mohw" 
-                  label="官網" 
-                />
               </div>
             </div>
           )}
@@ -148,18 +97,10 @@ const AdviceView: React.FC<AdviceViewProps> = ({ stage, topic, onBack }) => {
           {!isValueTopic && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <h3 className="font-bold text-[#7ca9b0] flex items-center gap-2 text-base mb-4">
-                🔬 醫學實證
+                🔬 醫學實證/觀點
               </h3>
               <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">
                 {result.journalResearch}
-              </div>
-              <div className="text-right">
-                <SourceLink 
-                  title={result.journalTitle}
-                  defaultQuery={topic.title} 
-                  type="journal" 
-                  label="研究" 
-                />
               </div>
             </div>
           )}

@@ -32,7 +32,7 @@ const StageSelector: React.FC<StageSelectorProps> = ({ onSelect }) => {
               {isBorn && (
                 <div className="sticky top-0 z-10 flex items-center justify-center py-2 bg-[#E3E8EB]/90 backdrop-blur-sm mb-4 w-full">
                   <span className="text-sm font-bold text-white bg-[#A3D5DC] text-slate-700 px-4 py-1 rounded-full shadow-sm animate-pulse border border-white/50">
-                    恭喜出生!
+                    寶寶出生了！
                   </span>
                 </div>
               )}
@@ -43,16 +43,11 @@ const StageSelector: React.FC<StageSelectorProps> = ({ onSelect }) => {
               >
                 <button
                   onClick={() => onSelect(stage)}
-                  // Default bg-[#E3E8EB] (blends in) with border. Active/Hover: bg-[#F3EFDD]
                   className={`w-full flex items-center p-6 rounded-3xl transition-all duration-300 relative overflow-hidden group border-2
-                    ${isBorn 
-                      ? 'bg-[#F3EFDD] shadow-lg border-[#E3D5C9] scale-100' 
-                      : 'bg-[#E3E8EB] border-slate-300 hover:bg-[#F3EFDD] hover:border-[#E3D5C9]'
-                    }`}
+                    bg-[#E3E8EB] border-slate-300 hover:bg-[#F3EFDD] hover:border-[#E3D5C9] active:scale-95`}
                 >
                   {/* Icon Container */}
-                  <div className={`flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mr-5 shadow-sm transition-colors
-                    ${isBorn ? 'bg-white' : 'bg-slate-100 group-hover:bg-white'}`}>
+                  <div className={`flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mr-5 shadow-sm transition-colors bg-white group-hover:scale-110 duration-300`}>
                     {stage.icon}
                   </div>
 

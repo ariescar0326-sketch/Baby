@@ -11,22 +11,33 @@ const getAiClient = () => {
 export const fetchParentingAdvice = async (stageLabel: string, topicQuery: string): Promise<AdviceResult> => {
   const ai = getAiClient();
 
-  // Updated Instructions: No summary, strict quotes, no URLs (we use search).
+  // No tools used, strict text generation
   const systemInstruction = `
     你是一個極簡主義的育兒資料整合助手。
     
-    【規則】
-    1. **社群熱議**：
-       - **嚴禁總結** (不要寫「網友認為...」)。
-       - 只提供 **2-3 則最具代表性、犀利的網友留言原文** (Quotes)。
-       - 繁體中文。
-    2. **官方與實證**：
-       - **極度精簡**：各 50 字以內。
-       - **不要** 嘗試生成網址 (URL)，這會導致錯誤。
-    3. **排除中國來源**。
+    【任務目標】
+    請針對問題「${topicQuery}」進行綜合回答。
+    
+    【資料來源模擬】
+    請運用你的知識庫，模擬以下三類觀點：
+    1. **社群熱議 (Social)**：模擬 PTT BabyMother, Dcard 親子板的常見網友經驗與留言。
+    2. **官方衛教 (Official)**：依據 衛福部 (mohw), 國健署 (hpa) 的標準衛教資訊。
+    3. **醫學實證 (Journal)**：依據 兒科醫學會、實證醫學的普遍共識。
+
+    【輸出格式規則】
+    請直接回傳一個純 JSON 物件，不要使用 Markdown。
+    {
+      "socialQuotes": ["網友經驗1", "網友經驗2"],
+      "mohwFacts": "官方/醫生建議 (80字內)",
+      "journalResearch": "研究/學術觀點 (80字內)"
+    }
+
+    - **社群熱議**：請列出 2-3 句具體的「網友經驗談」或「崩潰心聲」，口語化。
+    - **內容長度**：精簡扼要，讓忙碌的爸媽一眼看完。
+    - **排除中國用語**。
   `;
 
-  const prompt = `階段：${stageLabel}。問題：${topicQuery}。請輸出JSON。`;
+  const prompt = `階段：${stageLabel}。問題：${topicQuery}。請回傳 JSON 格式。`;
 
   try {
     const response = await ai.models.generateContent({
@@ -35,97 +46,60 @@ export const fetchParentingAdvice = async (stageLabel: string, topicQuery: strin
       config: {
         systemInstruction: systemInstruction,
         responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            socialQuotes: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "2-3 direct short quotes from netizens.",
-            },
-            mohwFacts: {
-              type: Type.STRING,
-              description: "Very concise (max 50 words) official advice.",
-            },
-            mohwTitle: {
-              type: Type.STRING,
-              description: "Keywords or title for searching MOHW data.",
-            },
-            journalResearch: {
-              type: Type.STRING,
-              description: "Very concise (max 50 words) scientific finding.",
-            },
-            journalTitle: {
-              type: Type.STRING,
-              description: "Keywords or title of the research paper.",
-            },
-          },
-          required: ["socialQuotes", "mohwFacts", "journalResearch", "mohwTitle", "journalTitle"],
-        },
       },
     });
 
-    const text = response.text;
-    if (!text) {
-      throw new Error("No content generated");
-    }
+    const text = response.text || "{}";
+    const parsedData = JSON.parse(text);
 
-    return JSON.parse(text) as AdviceResult;
+    return {
+      socialQuotes: parsedData.socialQuotes || ["無相關討論"],
+      mohwFacts: parsedData.mohwFacts || "無官方資料",
+      journalResearch: parsedData.journalResearch || "無研究資料",
+    };
+
   } catch (error) {
     console.error("Gemini API Error:", error);
     return {
-      socialQuotes: ["暫時無法取得留言"],
+      socialQuotes: ["資料讀取失敗"],
       mohwFacts: "資料讀取失敗",
-      mohwTitle: topicQuery,
-      journalResearch: "資料讀取失敗",
-      journalTitle: topicQuery
+      journalResearch: "資料讀取失敗"
     };
   }
 };
 
-// New function to fetch trending topics using Google Search
-export const fetchTrendingTopics = async (stageLabel: string): Promise<Topic[]> => {
+export const fetchTrendingTopics = async (stageLabel: string, existingTitles: string[] = []): Promise<Topic[]> => {
   const ai = getAiClient();
   
+  // Create a list of excluded titles to prevent duplicates
+  const excludeList = existingTitles.slice(-20).join(", "); // Check against recent ones
+
   const systemInstruction = `
     你是一個育兒趨勢觀察家。
-    請搜尋台灣論壇 (PTT, Dcard, Mobile01) 關於「${stageLabel}」的熱門話題。
-    並嚴格依照以下邏輯判斷 Tag (勿只看關鍵字，要看問題本質)：
+    請為「${stageLabel}」階段產生 **新的** 熱門話題。
 
-    【Tag 邏輯判斷】
-    1. **檢查 (Checkup)**：
-       - 關鍵：**進醫院**、**醫療檢驗**、**數據指標**。
-       - 包含：產檢項目(高層次, 羊穿, 糖水)、疫苗接種、生長曲線(百分位)、黃疸指數、聽力篩檢。
-    2. **健康 (Health)**：
-       - 關鍵：**生病**、**居家症狀**、**身體不適**。
-       - 包含：發燒、腸絞痛、感冒、紅屁股、孕吐、出血、水腫、胎動感覺、大便顏色。
-    3. **衛教 (Health Edu)**：
-       - 關鍵：**預防知識**、**名詞定義**、**科學常識**。
-       - 包含：高齡產婦定義、排卵期計算、近視預防、安全睡眠環境。
-    4. **發展 (Development)**：
-       - 關鍵：**身體技能**、**里程碑**、**非疾病變化**。
-       - 包含：翻身、長牙(非發燒部分)、學走、語言說話、頭型矯正、戒尿布。
-    5. **商品 (Merchandise)**：
-       - 關鍵：**花錢**、**買什麼**、**費用**。
-       - 包含：試管費用、待產包清單、推車汽座推薦、保險。
-    6. **價值觀 (Values)**：
-       - 關鍵：**家庭糾紛**、**心理建設**、**選擇題**。
-       - 包含：是否做試管、婆媳育兒觀念、月子中心錢誰出。
+    【排除清單】
+    請 **絕對不要** 重複以下標題：
+    ${excludeList}
+
+    【標題規則】
+    - **簡短**：**15個字以內**。
+    - **口語化**：像是在問問題 (例：「這真的很重要嗎？」)。
+    - **多樣性**：請包含「教育」、「心理」、「商品」等不同面向，不要只侷限於健康。
+
+    【Tag 選項】
+    '檢查', '健康', '衛教', '心理', '營養', '發展', '價值觀', '商品', '教育'
 
     【產出規則】
-    - 優先抓取 **檢查** 與 **健康** 類的急迫話題 (權重 x2)。
-    - 減少 商品 與 價值觀 話題。
-    - 產出 8 個 Topic。
+    - 產出 5 個 **不重複** 的新話題。
   `;
 
   const prompt = `
-    搜尋並回傳 JSON Array。
+    請回傳 JSON Array。
     格式: [{"id": "...", "title": "...", "tag": "...", "queryPrompt": "..."}]
     
-    Tag 選項: '檢查', '健康', '衛教', '心理', '營養', '發展', '價值觀', '商品'。
     id 使用隨機字串。
-    title 要吸睛。
-    queryPrompt 要精確 (用於 Google 搜尋)。
+    queryPrompt 要精確。
     不要使用 Markdown。
   `;
 
@@ -134,27 +108,13 @@ export const fetchTrendingTopics = async (stageLabel: string): Promise<Topic[]> 
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }], 
         systemInstruction: systemInstruction,
-        // responseMimeType: "application/json", // REMOVED: Not supported with tools
+        responseMimeType: "application/json",
       }
     });
 
     let text = response.text || "[]";
-    
-    // Manual Cleanup for JSON
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    // Find the array part if there is extra text
-    const arrayStart = text.indexOf('[');
-    const arrayEnd = text.lastIndexOf(']');
-    if (arrayStart !== -1 && arrayEnd !== -1) {
-      text = text.substring(arrayStart, arrayEnd + 1);
-    }
-
     const rawData = JSON.parse(text);
-    
-    // Validate tag casting
     return rawData.map((item: any) => ({
       ...item,
       tag: item.tag as TopicTag
